@@ -1,6 +1,6 @@
 /******************************************************************
  *
- *   YOUR NAME / SECTION NUMBER
+ *   NATALIE OBOZA / SECTION 002
  *
  *   Note, additional comments provided throughout this source code
  *   is for educational purposes
@@ -129,7 +129,7 @@ public class CuckooHash<K, V> {
 	/**
 	 * Method clear
 	 *
-	 * Removes all elements in the table, it does not rest the size of 
+	 * Removes all elements in the table, it does not reset the size of
      * the hashmap. Optionally, we could reset the CAPACITY to its
      * initial value when the object was instantiated.
 	 */
@@ -245,13 +245,44 @@ public class CuckooHash<K, V> {
 	 */
 
  	public void put(K key, V value) {
+		int attempts = 0;
+		int maxAttempts = CAPACITY; //variable to hold CAPACITY to detect infinite loop
+		K currentKey = key;
+		V currentValue = value;
+		int pos = hash1(currentKey);
+		//Start by putting the key, value pair in the position determined by hash1
+		//only reshuffle items n times, where n = CAPACITY ('maxAttempts' in this method)
+		while (attempts < maxAttempts) {
+			//check if bucket is empty, if it is then place the key,value pair in that position
+			if (table[pos] == null) {
+				table[pos] = new Bucket<>(currentKey, currentValue);
+				return;
+			}
 
-		// ADD YOUR CODE HERE - DO NOT FORGET TO ADD YOUR NAME AT TOP OF FILE.
-		// Also make sure you read this method's prologue above, it should help
-		// you. Especially the two HINTS in the prologue.
+			//Skip insertion if key,value pair to be inserted is a duplicate
+			if (table[pos].getBucKey().equals(currentKey) && table[pos].getValue().equals(currentValue)) {
+				return;
+			}
 
-		return;
+			//If bucket is not empty, kick out the current bucket content
+			K oldKey = table[pos].getBucKey();
+			V oldValue = table[pos].getValue();
+			table[pos] = new Bucket<>(currentKey, currentValue);
+
+			//Prepare the old key,value pair for re-insertion at its alternate position
+			currentKey = oldKey;
+			currentValue = oldValue;
+			//shuffle position between hash1 and hash2 until an empty bucket is found or a cycle is detected
+			pos = (pos == hash1(currentKey)) ? hash2(currentKey) : hash1(currentKey);
+
+			attempts++;
+		}
+
+		//If a cycle is detected (number of attempts > CAPACITY), rehash and re-attempt the insertion through recursion
+		rehash();
+		put(currentKey, currentValue);
 	}
+
 
 
 	/**
